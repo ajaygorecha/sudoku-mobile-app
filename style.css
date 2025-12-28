@@ -1,0 +1,334 @@
+:root {
+    --primary-color: #235EFF;
+    --primary-dark: #1b4ac4;
+    --primary-light: #6b93ff;
+    --bg-color: #f8f9fa;
+    --surface-color: #ffffff;
+    --text-color: #212529;
+    --grid-border: #dfe6ed;
+    --cell-select-bg: #e2eeff;
+    --cell-same-num-bg: #cce0ff;
+    --cell-related-bg: #f0f4f8;
+    --error-color: #dc3545;
+    --success-color: #198754;
+    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --border-radius-lg: 16px;
+    --border-radius-sm: 8px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    overscroll-behavior-y: none;
+    /* Prevent pull-to-refresh on mobile */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Home Screen */
+.home-screen {
+    padding: 2rem;
+    text-align: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.logo-area {
+    margin-bottom: 3rem;
+}
+
+.logo-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 6px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1rem;
+}
+
+.btn-primary-custom {
+    background-color: var(--primary-color);
+    color: var(--surface-color);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius-lg);
+    font-weight: 600;
+    font-size: 1.1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.1s, box-shadow 0.1s;
+    color: var(--surface-color);
+}
+
+.btn-primary-custom:active {
+    transform: scale(0.98);
+    box-shadow: none;
+}
+
+/* Game Screen */
+.game-screen {
+    padding: 1rem;
+    height: 100vh;
+    justify-content: flex-start;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+}
+
+.game-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.sudoku-board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    background-color: var(--text-color);
+    gap: 1px;
+    border: 2px solid var(--text-color);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.sudoku-cell {
+    background-color: var(--surface-color);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+/* Thick borders for 3x3 grids */
+.sudoku-cell:nth-child(3n) {
+    border-right: 2px solid var(--text-color) !important;
+}
+
+.sudoku-cell:nth-child(9n) {
+    border-right: none !important;
+}
+
+.sudoku-cell:nth-child(n+19):nth-child(-n+27),
+.sudoku-cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid var(--text-color) !important;
+}
+
+/* Fix for gap logic visual - we might use box-sizing or borders differently if gap creates issues. 
+   Actually, standard way is often using borders on cells. 
+   Let's refine grid lines logic below for cleaner look. */
+
+.sudoku-board {
+    gap: 0;
+    border: 2px solid #333;
+}
+
+.sudoku-cell {
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.sudoku-cell.box-right {
+    border-right: 2px solid #333;
+}
+
+.sudoku-cell.box-bottom {
+    border-bottom: 2px solid #333;
+}
+
+.sudoku-cell.selected {
+    background-color: var(--cell-select-bg);
+}
+
+.sudoku-cell.related {
+    background-color: var(--cell-related-bg);
+}
+
+.sudoku-cell.same-num {
+    background-color: var(--cell-same-num-bg);
+}
+
+.sudoku-cell.error {
+    color: var(--error-color);
+    background-color: #ffdce0;
+}
+
+.sudoku-cell.fixed {
+    font-weight: 700;
+    color: #000;
+}
+
+.sudoku-cell.editable {
+    color: var(--primary-color);
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.control-btn {
+    border: none;
+    background: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.control-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 0.2rem;
+    background-color: var(--surface-color);
+    padding: 10px;
+    border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+    transition: 0.2s;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn.active i {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.numpad {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 0.5rem;
+}
+
+/* For mobile portrait, maybe 5 and 4 or just 1-9 row if fits? 
+   Better 1-9 row for width, or 3x3 grid for thumb?
+   Standard apps often use a single row 1-9 at bottom. */
+
+.numpad-btn {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    background-color: var(--surface-color);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 0;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+}
+
+.numpad-btn:active {
+    background-color: var(--cell-select-bg);
+}
+
+.numpad-btn.completed {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* Overlay / Modal */
+.modal-custom-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.modal-custom-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-custom-content {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--border-radius-lg);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s;
+}
+
+.modal-custom-backdrop.show .modal-custom-content {
+    transform: scale(1);
+}
+
+/* Notes inside cell */
+.cell-notes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    font-size: 8px;
+    line-height: 1;
+    color: #666;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.note-num {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
