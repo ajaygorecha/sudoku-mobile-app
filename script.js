@@ -29,7 +29,8 @@ let state = {
     isNoteMode: false,
     history: [],      // For Undo: {type: 'input'|'note', r, c, val, prevVal}
     isPaused: false,
-    isGameOver: false
+    isGameOver: false,
+    wrongCells: []    // Tracks wrong cell positions as "r,c" strings
 };
 
 // --- Sudoku Generator Class ---
@@ -140,6 +141,7 @@ function startGame(level) {
     state.isPaused = false;
     state.history = [];
     state.notes = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
+    state.wrongCells = [];
 
     const generator = new SudokuGenerator();
     const data = generator.generate(level);
@@ -166,6 +168,7 @@ function resumeGame() {
 
         // Ensure notes are valid arrays
         if (!state.notes) state.notes = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []));
+        if (!state.wrongCells) state.wrongCells = [];
 
         showScreen('game-screen');
         renderBoard();
@@ -184,19 +187,53 @@ function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
 
-    if (screenId === 'home-screen') {
-        checkResumeAvailable();
+    const nav = document.getElementById('bottom-nav');
+    if (screenId === 'game-screen') {
+        nav.style.display = 'none';
+    } else {
+        nav.style.display = '';
+        if (screenId === 'home-screen') checkResumeAvailable();
+        if (screenId === 'stats-screen') renderStats();
     }
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    showScreen(tab === 'home' ? 'home-screen' : 'stats-screen');
 }
 
 function checkResumeAvailable() {
     const saved = localStorage.getItem('sudoku_save');
-    const resumeBtn = document.getElementById('resume-btn-container');
+    const card = document.getElementById('resume-card');
+    if (!card) return;
     if (saved) {
-        resumeBtn.style.display = 'block';
+        card.style.display = 'flex';
+        try {
+            const s = JSON.parse(saved);
+            const meta = document.getElementById('resume-meta');
+            if (meta) meta.textContent = s.level.charAt(0).toUpperCase() + s.level.slice(1) + ' · ' + formatTime(s.timer || 0);
+        } catch (e) {}
     } else {
-        resumeBtn.style.display = 'none';
+        card.style.display = 'none';
     }
+}
+
+function renderStats() {
+    const scores = JSON.parse(localStorage.getItem('sudoku_highscores')) || [];
+    const list = document.getElementById('scores-list');
+    if (!list) return;
+    if (scores.length === 0) {
+        list.innerHTML = `<div class="scores-empty"><i class="ri-trophy-line"></i><p>No scores yet!</p><p>Complete a game to see your scores here.</p></div>`;
+        return;
+    }
+    const rankClass = ['gold', 'silver', 'bronze'];
+    list.innerHTML = scores.map((s, i) => `
+        <div class="score-row">
+            <div class="score-rank ${rankClass[i] || ''}">${i + 1}</div>
+            <div class="score-level">${s.level.charAt(0).toUpperCase() + s.level.slice(1)}<span class="score-date">${s.date}</span></div>
+            <div class="score-points">${s.score}</div>
+        </div>`).join('');
 }
 
 function startTimer() {
@@ -247,6 +284,8 @@ function renderBoard() {
                 counts[val]++;
                 if (state.initial[r][c] !== 0) {
                     cell.classList.add('fixed');
+                } else if (state.wrongCells.includes(`${r},${c}`)) {
+                    cell.classList.add('wrong');
                 } else {
                     cell.classList.add('editable');
                 }
@@ -275,7 +314,7 @@ function renderBoard() {
 }
 
 function updateNumpad(counts) {
-    const btns = document.querySelectorAll('.numpad-btn');
+    const btns = document.querySelectorAll('.num-btn');
     btns.forEach((btn, index) => {
         const num = index + 1;
         if (counts[num] >= 9) {
@@ -348,11 +387,18 @@ function inputNumber(num) {
 
         state.grid[r][c] = num;
 
+        // Clear wrong cell marker when erasing or overwriting
+        const key = `${r},${c}`;
+        const wrongIdx = state.wrongCells.indexOf(key);
+        if (wrongIdx > -1) state.wrongCells.splice(wrongIdx, 1);
+
         // Validate Move
         if (num !== 0) {
             if (num !== state.solution[r][c]) {
-                // Mistake
+                // Mistake — handleMistake calls renderBoard internally
                 handleMistake(r, c);
+                saveGame();
+                return;
             } else {
                 // Correct
                 checkCompletion();
@@ -369,19 +415,42 @@ function handleMistake(r, c) {
     state.mistakes++;
     document.getElementById('mistake-count').textContent = state.mistakes;
 
-    // Vibrate / Shake effect (Can add class)
-    const cellIdx = r * 9 + c;
-    const cell = document.querySelectorAll('.sudoku-cell')[cellIdx];
-    cell.classList.add('error');
-    setTimeout(() => cell.classList.remove('error'), 500);
+    // Track this cell as wrong so it renders red
+    const key = `${r},${c}`;
+    if (!state.wrongCells.includes(key)) state.wrongCells.push(key);
+
+    // Shake the cell
+    renderBoard();
+    const cellEl = document.querySelectorAll('.sudoku-cell')[r * 9 + c];
+    cellEl.classList.add('shake');
+    cellEl.addEventListener('animationend', () => cellEl.classList.remove('shake'), { once: true });
+
+    // Play error sound
+    playErrorSound();
 
     if (state.mistakes >= MAX_MISTAKES) {
-        gameOver(false);
+        setTimeout(() => gameOver(false), 400);
     } else {
-        // Penalty?
         state.score = Math.max(0, state.score - 50);
         updateStats();
     }
+}
+
+function playErrorSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(220, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.25);
+    } catch (e) { /* Audio not supported */ }
 }
 
 function addToHistory(action) {
@@ -533,10 +602,15 @@ function checkCompletion() {
                 }
             }
         }
-        if (isCorrect) gameOver(true);
+        if (isCorrect) {
+            state.score += 10;
+            updateStats();
+            gameOver(true);
+            return;
+        }
     }
 
-    // Also give points for correct move?
+    // Give points for correct move
     state.score += 10;
     updateStats();
 }
@@ -552,18 +626,20 @@ function gameOver(isWin) {
 
     modal.classList.add('show');
     if (isWin) {
-        title.textContent = "Victory!";
-        title.className = "mb-3 text-success";
+        title.textContent = "🎉 Victory!";
+        title.style.color = 'var(--success)';
         saveHighScore(state.score);
     } else {
         title.textContent = "Game Over";
-        title.className = "mb-3 text-danger";
+        title.style.color = 'var(--error)';
     }
 
     body.innerHTML = `
-        <p class="fs-4">Score: ${state.score}</p>
-        <p class="text-muted">Time: ${formatTime(state.timer)}</p>
+        <span class="modal-score">${state.score}</span>
+        <span class="modal-time">Time: ${formatTime(state.timer)}</span>
     `;
+    document.getElementById('modal-ad').style.display = 'block';
+    document.getElementById('modal-footer').innerHTML = `<button class="btn-primary" onclick="showHome()">Back to Home</button>`;
 }
 
 function pauseGame() {
@@ -572,10 +648,13 @@ function pauseGame() {
 
     const modal = document.getElementById('custom-modal');
     document.getElementById('modal-title').textContent = "Paused";
-    document.getElementById('modal-title').className = "mb-3";
+    document.getElementById('modal-title').style.color = 'var(--text)';
 
-    document.getElementById('modal-body').innerHTML = `
-        <button class="btn btn-success rounded-pill px-4" onclick="resumeFromPause()">Resume</button>
+    document.getElementById('modal-ad').style.display = 'none';
+    document.getElementById('modal-body').innerHTML = `<p class="modal-pause-text">Game is paused</p>`;
+    document.getElementById('modal-footer').innerHTML = `
+        <button class="btn-primary" onclick="resumeFromPause()">Resume</button>
+        <button class="btn-secondary" onclick="showHome()">Quit to Home</button>
     `;
 
     modal.classList.add('show');
@@ -588,8 +667,10 @@ function resumeFromPause() {
 
 function showHome() {
     stopTimer();
-    showScreen('home-screen');
     document.getElementById('custom-modal').classList.remove('show');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-home').classList.add('active');
+    showScreen('home-screen');
 }
 
 
@@ -629,29 +710,7 @@ function installApp() {
 }
 
 function showHighScores() {
-    const scores = JSON.parse(localStorage.getItem('sudoku_highscores')) || [];
-    let html = '<ul class="list-group text-start d-inline-block w-100">';
-    if (scores.length === 0) {
-        html += '<li class="list-group-item text-center">No scores yet!</li>';
-    } else {
-        scores.forEach((s, i) => {
-            html += `<li class="list-group-item d-flex justify-content-between">
-                <span>${i + 1}. ${s.level.toUpperCase()}</span>
-                <span class="fw-bold">${s.score}</span>
-            </li>`;
-        });
-    }
-    html += '</ul>';
-
-    const modal = document.getElementById('custom-modal');
-    document.getElementById('modal-title').textContent = "High Scores";
-    document.getElementById('modal-body').innerHTML = html;
-
-    // Replace footer with specific close button
-    const footer = modal.querySelector('.d-grid');
-    footer.innerHTML = `<button class="btn btn-secondary-custom" onclick="closeModal()">Close</button>`;
-
-    modal.classList.add('show');
+    switchTab('stats');
 }
 
 function closeModal() {

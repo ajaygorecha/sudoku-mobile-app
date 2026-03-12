@@ -5,146 +5,222 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sudoku Master</title>
-
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#235EFF">
+    <meta name="theme-color" content="#4361EE">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="assets/images/sudoku-app-icon.png">
     <link rel="manifest" href="manifest.json">
-
-    <!-- CSS Dependencies -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
-    <style>
-        /* Initial Critical CSS to prevent FOUC */
-        body {
-            background-color: #f8f9fa;
-            overscroll-behavior-y: none;
-        }
-
-        #app {
-            max-width: 500px;
-            margin: 0 auto;
-            min-height: 100vh;
-            position: relative;
-        }
-    </style>
+    <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXXX with your Publisher ID -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXXX"
+        crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <div id="app" class="d-flex flex-column">
+    <div id="app">
 
-        <!-- Home Screen -->
-        <div id="home-screen" class="screen home-screen active">
-            <div class="logo-area">
-                <img src="assets/images/sudoku-app-icon.png" alt="Sudoku Logo" class="logo-img">
-                <h1 class="display-4 fw-bold">Sudoku</h1>
-                <p class="text-muted">Master the Grid</p>
-            </div>
-
-            <div class="d-grid gap-3 mt-4 px-4">
-                <button class="btn btn-primary-custom btn-lg rounded-pill" onclick="startGame('easy')">🌱 Easy</button>
-                <button class="btn btn-primary-custom btn-lg rounded-pill" onclick="startGame('medium')">⚖️
-                    Medium</button>
-                <button class="btn btn-primary-custom btn-lg rounded-pill" onclick="startGame('hard')">🔥 Hard</button>
-            </div>
-
-            <div class="mt-4">
-                <button class="btn btn-link text-decoration-none" onclick="showHighScores()">High Scores</button>
-                <div id="resume-btn-container" class="mt-2" style="display:none;">
-                    <button class="btn btn-outline-primary rounded-pill px-4" onclick="resumeGame()">Resume
-                        Game</button>
+        <!-- ═══════════ HOME SCREEN ═══════════ -->
+        <div id="home-screen" class="screen active">
+            <div class="screen-scroll">
+                <div class="home-hero">
+                    <img src="assets/images/sudoku-app-icon.png" alt="Sudoku" class="hero-icon">
+                    <h1 class="hero-title">Sudoku</h1>
+                    <p class="hero-sub">Master the Grid</p>
                 </div>
-                <div class="mt-3">
-                    <button id="install-btn" class="btn btn-sm btn-dark rounded-pill px-3" style="display:none;"
-                        onclick="installApp()">
-                        <i class="ri-download-line"></i> Install App
+
+                <div id="resume-card" class="resume-card" style="display:none" onclick="resumeGame()">
+                    <div class="resume-info">
+                        <div class="resume-label">Continue Playing</div>
+                        <div class="resume-meta" id="resume-meta">In Progress</div>
+                    </div>
+                    <i class="ri-play-circle-fill resume-icon"></i>
+                </div>
+
+                <div class="section-title">New Game</div>
+
+                <div class="difficulty-stack">
+                    <button class="diff-card" onclick="startGame('easy')">
+                        <span class="diff-emoji">🌱</span>
+                        <div class="diff-info">
+                            <div class="diff-name">Easy</div>
+                            <div class="diff-desc">Perfect for beginners</div>
+                        </div>
+                        <i class="ri-arrow-right-s-line diff-arrow"></i>
+                    </button>
+                    <button class="diff-card" onclick="startGame('medium')">
+                        <span class="diff-emoji">⚖️</span>
+                        <div class="diff-info">
+                            <div class="diff-name">Medium</div>
+                            <div class="diff-desc">A steady challenge</div>
+                        </div>
+                        <i class="ri-arrow-right-s-line diff-arrow"></i>
+                    </button>
+                    <button class="diff-card" onclick="startGame('hard')">
+                        <span class="diff-emoji">🔥</span>
+                        <div class="diff-info">
+                            <div class="diff-name">Hard</div>
+                            <div class="diff-desc">For the bold minds</div>
+                        </div>
+                        <i class="ri-arrow-right-s-line diff-arrow"></i>
                     </button>
                 </div>
+
+                <!-- Banner Ad — replace data-ad-slot with your Ad Unit ID -->
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <ins class="adsbygoogle"
+                        style="display:block"
+                        data-ad-client="ca-pub-XXXXXXXXXXXXXXXXX"
+                        data-ad-slot="XXXXXXXXXX"
+                        data-ad-format="auto"
+                        data-adtest="on"
+                        data-full-width-responsive="true"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                </div>
+
+                <button id="install-btn" class="install-btn" style="display:none" onclick="installApp()">
+                    <i class="ri-download-line"></i> Install App
+                </button>
             </div>
         </div>
 
-        <!-- Game Screen -->
+        <!-- ═══════════ SCORES SCREEN ═══════════ -->
+        <div id="stats-screen" class="screen">
+            <div class="screen-scroll">
+                <div class="page-header">
+                    <h2 class="page-title">High Scores</h2>
+                    <p class="page-sub">Your best performances</p>
+                </div>
+                <div id="scores-list" class="scores-list"></div>
+
+                <!-- Banner Ad on Scores screen -->
+                <div class="ad-container" style="margin-top: 20px;">
+                    <div class="ad-label">Advertisement</div>
+                    <ins class="adsbygoogle"
+                        style="display:block"
+                        data-ad-client="ca-pub-XXXXXXXXXXXXXXXXX"
+                        data-ad-slot="XXXXXXXXXX"
+                        data-ad-format="auto"
+                        data-adtest="on"
+                        data-full-width-responsive="true"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ GAME SCREEN ═══════════ -->
         <div id="game-screen" class="screen game-screen">
-            <div class="game-header">
-                <div>
-                    <button class="btn btn-sm btn-light rounded-circle" onclick="showHome()"><i
-                            class="ri-arrow-left-line"></i></button>
-                    <span id="level-display" class="badge bg-primary ms-2 rounded-pill">Easy</span>
+
+            <div class="game-topbar">
+                <button class="icon-btn" onclick="showHome()">
+                    <i class="ri-arrow-left-s-line"></i>
+                </button>
+                <span id="level-display" class="level-pill">EASY</span>
+                <div class="topbar-stats">
+                    <div class="topbar-stat">
+                        <span class="ts-val" id="mistake-count">0</span><span class="ts-sep">/3</span>
+                        <span class="ts-label">Mistakes</span>
+                    </div>
+                    <div class="ts-divider"></div>
+                    <div class="topbar-stat">
+                        <span class="ts-val" id="timer">00:00</span>
+                        <span class="ts-label">Time</span>
+                    </div>
+                    <div class="ts-divider"></div>
+                    <div class="topbar-stat">
+                        <span class="ts-val" id="score">0</span>
+                        <span class="ts-label">Score</span>
+                    </div>
                 </div>
-                <div class="text-end">
-                    <div class="game-info">Mistakes: <span id="mistake-count">0</span>/3</div>
-                    <div class="game-info fw-bold" id="timer">00:00</div>
-                    <div class="game-info text-primary">Score: <span id="score">0</span></div>
+            </div>
+
+            <div class="board-wrapper">
+                <div class="sudoku-board" id="board"></div>
+            </div>
+
+            <div class="game-panel">
+                <div class="controls">
+                    <button class="ctrl-btn" onclick="undo()" id="btn-undo">
+                        <i class="ri-arrow-go-back-line"></i>
+                        <span>Undo</span>
+                    </button>
+                    <button class="ctrl-btn" onclick="erase()" id="btn-erase">
+                        <i class="ri-eraser-line"></i>
+                        <span>Erase</span>
+                    </button>
+                    <button class="ctrl-btn" onclick="toggleNotes()" id="btn-note">
+                        <i class="ri-pencil-line"></i>
+                        <span>Notes <span id="note-indicator" class="note-on" style="display:none">ON</span></span>
+                    </button>
+                    <button class="ctrl-btn" onclick="useHint()" id="btn-hint">
+                        <i class="ri-lightbulb-line"></i>
+                        <span>Hint</span>
+                    </button>
+                    <button class="ctrl-btn" onclick="pauseGame()">
+                        <i class="ri-pause-line"></i>
+                        <span>Pause</span>
+                    </button>
                 </div>
-            </div>
 
-            <div class="sudoku-board" id="board">
-                <!-- Cells generated by JS -->
-            </div>
-
-            <div class="controls">
-                <button class="control-btn" onclick="undo()" id="btn-undo">
-                    <i class="ri-arrow-go-back-line"></i>
-                    <span>Undo</span>
-                </button>
-                <button class="control-btn" onclick="erase()" id="btn-erase">
-                    <i class="ri-eraser-line"></i>
-                    <span>Erase</span>
-                </button>
-                <button class="control-btn" onclick="toggleNotes()" id="btn-note">
-                    <i class="ri-pencil-line"></i>
-                    <span>Notes <span id="note-indicator" style="font-size:10px; display:none">ON</span></span>
-                </button>
-                <button class="control-btn" onclick="useHint()" id="btn-hint">
-                    <i class="ri-lightbulb-line"></i>
-                    <span>Hint (50)</span>
-                </button>
-                <button class="control-btn" onclick="pauseGame()">
-                    <i class="ri-pause-line"></i>
-                    <span>Pause</span>
-                </button>
-            </div>
-
-            <div class="numpad">
-                <button class="numpad-btn" onclick="inputNumber(1)">1</button>
-                <button class="numpad-btn" onclick="inputNumber(2)">2</button>
-                <button class="numpad-btn" onclick="inputNumber(3)">3</button>
-                <button class="numpad-btn" onclick="inputNumber(4)">4</button>
-                <button class="numpad-btn" onclick="inputNumber(5)">5</button>
-                <button class="numpad-btn" onclick="inputNumber(6)">6</button>
-                <button class="numpad-btn" onclick="inputNumber(7)">7</button>
-                <button class="numpad-btn" onclick="inputNumber(8)">8</button>
-                <button class="numpad-btn" onclick="inputNumber(9)">9</button>
+                <div class="numpad">
+                    <button class="num-btn" onclick="inputNumber(1)">1</button>
+                    <button class="num-btn" onclick="inputNumber(2)">2</button>
+                    <button class="num-btn" onclick="inputNumber(3)">3</button>
+                    <button class="num-btn" onclick="inputNumber(4)">4</button>
+                    <button class="num-btn" onclick="inputNumber(5)">5</button>
+                    <button class="num-btn" onclick="inputNumber(6)">6</button>
+                    <button class="num-btn" onclick="inputNumber(7)">7</button>
+                    <button class="num-btn" onclick="inputNumber(8)">8</button>
+                    <button class="num-btn" onclick="inputNumber(9)">9</button>
+                </div>
             </div>
         </div>
 
-        <!-- Custom Modal (Winner/GameOver/Pause) -->
-        <div id="custom-modal" class="modal-custom-backdrop">
-            <div class="modal-custom-content">
-                <h2 id="modal-title" class="mb-3">Game Over</h2>
-                <div id="modal-body" class="mb-4">
-                    <p>Time: 05:23</p>
-                    <p>Score: 1200</p>
+        <!-- ═══════════ BOTTOM NAV ═══════════ -->
+        <nav id="bottom-nav" class="bottom-nav">
+            <button class="tab-btn active" id="tab-home" onclick="switchTab('home')">
+                <i class="ri-home-5-fill tab-icon-on"></i>
+                <i class="ri-home-5-line tab-icon-off"></i>
+                <span>Home</span>
+            </button>
+            <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')">
+                <i class="ri-trophy-fill tab-icon-on"></i>
+                <i class="ri-trophy-line tab-icon-off"></i>
+                <span>Scores</span>
+            </button>
+        </nav>
+
+        <!-- ═══════════ MODAL (bottom sheet) ═══════════ -->
+        <div id="custom-modal" class="modal-backdrop">
+            <div class="modal-sheet">
+                <div class="modal-handle"></div>
+                <h2 id="modal-title" class="modal-title">Game Over</h2>
+                <div id="modal-body" class="modal-body"></div>
+
+                <!-- Game Over Ad — hidden during pause, shown after win/loss -->
+                <div id="modal-ad" class="ad-container" style="display:none; margin-bottom: 16px;">
+                    <div class="ad-label">Advertisement</div>
+                    <ins class="adsbygoogle"
+                        style="display:block"
+                        data-ad-client="ca-pub-XXXXXXXXXXXXXXXXX"
+                        data-ad-slot="XXXXXXXXXX"
+                        data-ad-format="auto"
+                        data-adtest="on"
+                        data-full-width-responsive="true"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary-custom" onclick="showHome()">Home</button>
+
+                <div id="modal-footer" class="modal-footer">
+                    <button class="btn-primary" onclick="showHome()">Home</button>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Main Script -->
     <script src="script.js"></script>
-
-    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
